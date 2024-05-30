@@ -14,6 +14,6 @@ Please run the codebooks in the following order:
 This R notebook contains the code for the regressions, as well as discussions of the results.
 
 Technical Note: The files taxi_zone_lookup.csv and 2022_Yellow_Taxi_Trip_Data_20240330.csv (too large for github) are the csv files I used in python to build my final dataset.
-  I shared the 2022 yellow taxi data via google drive: https://drive.google.com/file/d/1J5MHEcRSTJHPCkqQ06O_arWIBzazTSBZ/view?usp=sharing
+  I share the 2022 yellow taxi data via google drive.
 
 Thank you!
