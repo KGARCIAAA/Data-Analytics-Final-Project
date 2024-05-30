@@ -1,0 +1,192 @@
+---
+title: "K_Garcia_Part4RNotebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+Here I will create the logit model regression for my model
+```{r}
+#necessary packages
+library(dplyr)
+library(ggplot2)
+library(stargazer)
+library(tibble)
+library(stringr)
+library(tidyverse)
+```
+
+Importing the data into R, if cleaned in python.
+```{r}
+#First, I will import the csv file.
+#Then, I will set the working directory and see all the column names in my file. 
+
+#Setting the working directory
+setwd("/Users/kgarcia/Documents/Spring '24/ECO590/Assignments/assn-3-regressions-KGARCIAAA")
+nycvenues_raw <- read.csv('final_dataset.csv',header=T,na.strings=c(""))
+
+names(nycvenues_raw) #allows me to see all the column names
+
+#the second part of the read.csv changes all missing values in the data as NA
+```
+
+```{r}
+#Checking for missing values and look at the number of unique values there are in each variable using sapply()
+
+sapply(nycvenues_raw,function(x) sum(is.na(x)))
+```
+```{r}
+#how many rows does each column have
+sapply(nycvenues_raw, function(x) length(unique(x)))
+```
+```{r}
+fivenum(nycvenues_raw$congestion_surcharge)
+```
+
+```{r}
+#I want to know how service zone is being read by r, and whether it is reading it as a factor
+is.factor(nycvenues_raw$service_zone)
+```
+
+```{r}
+#Since it is not reading it as a factor
+
+nycvenues_raw$service_zone <- factor(nycvenues_raw$service_zone)
+nycvenues_raw$name <- factor(nycvenues_raw$name)
+
+#Now I use the function contrast to make sure R knows that service zone & name are binary
+contrasts(nycvenues_raw$service_zone)
+contrasts(nycvenues_raw$name)
+```
+```{r}
+# Converting service_zone into numeric new column to binary numbers
+nycvenues_raw$service_zone_binary <- as.numeric(ifelse(nycvenues_raw$service_zone == "service_zone", 1, 0))
+
+```
+
+```{r}
+nycvenues_raw$service_zone_binary <- as.numeric(nycvenues_raw$service_zone == "Yellow Zone")
+```
+
+Running an OLS model
+```{r}
+#Run a regression with OLS. Ensure that you have more than 3 variables. 
+
+ols <- lm(num_rides_per_hour ~ trip_distance + total_plus_surcharge + total_amount + congestion_surcharge + VendorID, data = nycvenues_raw)
+
+#Summary of the OLS regression model
+summary(ols)
+```
+
+Running a regression with a filtered dataset:
+```{r}
+# First I will filter my data set for a specific venue
+filtered_nycvenues <- nycvenues_raw %>% filter(service_zone == "Yellow Zone")
+
+# Run a regression with the filtered data set
+results2 <- lm(total_amount~ fare_amount, data = filtered_nycvenues)
+
+# Print the summary of the regression model
+summary(results2)
+
+```
+
+Running a preferred regressiong using my dataset:
+```{r}
+logit_model <- glm(service_zone_binary ~ num_rides_per_hour + total_plus_surcharge, data=nycvenues_raw, family=binomial)
+summary(logit_model)
+```
+
+```{r}
+logit_model2 <- glm(service_zone_binary ~ num_rides_per_hour + trip_distance, data=nycvenues_raw, family=binomial)
+summary(logit_model2)
+```
+
+```{r}
+#model3 <- glm(service_zone ~ num_rides_per_hour + pickup_hour, data=nycvenues_raw, family=binomial)
+#takes too long because of the 'pickup hour'
+```
+
+Finding the marginal effect for model2
+```{r}
+#Marginal gives us the 'average' marginal effect for each variable
+#install.packages("Margins")
+library(margins)
+```
+```{r}
+logit_m <- margins(logit_model2)
+plot(logit_m)
+```
+
+```{r}
+# 'trip_distance' is in miles
+# the mean trip distance
+mean_trip_distance <- mean(nycvenues_raw$trip_distance)
+
+# the average marginal effect of trip distance for every 5 miles
+marginal_effects <- margins(logit_model2, variables = "trip_distance", 
+                             at = list(trip_distance = seq(0, 100, by = 5)))
+
+summary(marginal_effects)
+
+```
+
+```{r}
+# the mean number of rides per hour
+mean_num_rides_per_hour <- mean(nycvenues_raw$num_rides_per_hour)
+
+# the average marginal effect of num_rides_per_hour
+marginal_effects2 <- margins(logit_model, variables = "num_rides_per_hour", 
+                             at = list(num_rides_per_hour = mean_num_rides_per_hour))
+
+summary(marginal_effects2)
+
+```
+
+```{r}
+logit_model3 <- glm(service_zone_binary ~ num_rides_per_hour + trip_distance + total_amount + congestion_surcharge + total_plus_surcharge, data=nycvenues_raw, family=binomial)
+summary(logit_model3)
+```
+```{r}
+ # the mean trip distance
+mean_trip_distance <- mean(nycvenues_raw$trip_distance)
+
+# the average marginal effect of trip_distance
+marginal_effects3 <- margins(logit_model3, variables = "trip_distance", 
+                             at = list(trip_distance = mean_trip_distance))
+
+summary(marginal_effects3)
+
+```
+
+```{r}
+knitr::opts_chunk$set(echo = FALSE)
+library(stargazer)
+```
+
+```{r}
+stargazer(logit_model3,marginal_effects3, type = "text", 
+          title = "Regression Model Results",
+          covariate.labels = c("Number of Rides per hour", "Trip Distance (in Miles)", "Total Plus Surcharge", "Total Amount", "Congestion Surcharge", "Vendor ID"),
+          dep.var.caption = "",
+          dep.var.labels = "Service Zone",
+          dep.var.labels.include = TRUE,
+          notes.align = "l")
+```
+
+What does the regression tell us?
+
+In a logistic regression model, the coefficients indicate the change in the log odds of the dependent variable (Service Zone) for a one unit change in the independent variable, holding all other variables constant. 
+
+For the number of rides per hour, a one unit increase is associated with an increase in the log odds of service zone being a yellow zone by 1.337 units. 
+
+For trip distance in miles, a one unit increase is associated with an increase in the log odds of the service zone being a yellow zone by 0.012 units. Although not statistically significant.
+
+For Total plus surcharge, a one unit increase is associated with a decrease in the log odds of service zone being a yellow zone by 0.034 units. This is statistically significant at the 1% level.
+
+For total amount, a one unit increase is associated with an increase in the log odds of service zone being a yellow zone by 0.515 units. Not statistically significant.
+
+The coefficients for congestion surcharge and vendorID are not provided.
+
+Overall, the model does not suggest strong evidence for the impact of these variables on the probability of the service zone being yellow (1) or boro zone (0), except for total plus surcharge, which was statistically significant. 
+
