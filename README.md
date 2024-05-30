@@ -1,5 +1,8 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/x2gWpnvM)
+The Data Analytics Final Project was part of the Data Analysis course in my graduate program. The point of the course was to provide in depth practice of analytical thinking by using coding languages to solve a problem. The main goal was to use public API's and retrieve data, in order to clean and analyze a relationship. 
 
+For this project, I used TicketMasters' Discovery API to access venue information for the city of New York. I wanted to research the effect venue location has on parking zones in the year 2022. I had to use econometric regression analysis. The model used in this project was a logit model.  
+
+The following steps are provided below to replicate my analysis.
 
 Please run the codebooks in the following order:
 
